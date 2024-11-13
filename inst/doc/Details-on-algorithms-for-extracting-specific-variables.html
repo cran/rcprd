@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Details-on-algorithms-for-extracting-specific-variables</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Details-on-algorithms-for-extracting-specific-variables</h1>
+
+
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(rcprd)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="co">#&gt; Loading required package: data.table</span></span></code></pre></div>
+<div id="introduction" class="section level1" number="1">
+<h1><span class="header-section-number">1</span> Introduction</h1>
+<p><strong>rcprd</strong> contains a number of functions which extract
+specific variables, namely:</p>
+<ul>
+<li>BMI: <code>extract_BMI</code></li>
+<li>Cholesterol/high-density lipoprotein (HDL) ratio:
+<code>extract_cholhdl_ratio</code></li>
+<li>Diabetes status: <code>extract_diabetes</code></li>
+<li>Smoking status: <code>extract_smoking</code></li>
+</ul>
+<p>The algorithms underpinning the extraction of these variables are
+given in section 2. A summary of the unit measurements recorded for
+these variables is given in section 3.</p>
+</div>
+<div id="algorithms-for-variable-extraction" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> Algorithms for variable
+extraction</h1>
+<div id="bmi-extract_bmi" class="section level2" number="2.1">
+<h2><span class="header-section-number">2.1</span> BMI
+(<code>extract_BMI</code>)</h2>
+<p>Extraction of BMI requires the user to specify three codelists. One
+for BMI scores (<code>codelist_bmi</code>), one for height measurements
+(<code>codelist_height</code>) and one for weight measurements
+(<code>codelist_weight</code>). All the BMI, height and weight
+measurements for each patient in the cohort of interest are then
+extracted. The algorithm is as follows:</p>
+<ul>
+<li>Extract the most recent BMI, height and weight measurements (within
+the specified time period) according to the user inputted code lists.
+Observation dates identified using variable <em>obsdate</em>.
+<ul>
+<li>The measurements must be non-missing</li>
+<li>The BMI measurements must be within the user-defined valid
+range.</li>
+</ul></li>
+<li>Rescale height scores to metres. When numunitid is not <span class="math inline">\(\in \{173, 432, 3202\}\)</span>, which correspond
+to metres, the measurement is assumed to be centimetres, and the height
+measurement is divided by 100 (see section 3).</li>
+<li>Rescale weight scores to kg. When numunitid is <span class="math inline">\(\in \{1691, 2318, 2997, 6265\}\)</span>, which
+correspond to stone, the measurement is converted to kg. All other
+measurements are assumed to be kg (see section 3).</li>
+<li>Merge height and weight measurements.
+<ul>
+<li>Calculate BMI for every pair of height and weight measurements using
+<span class="math inline">\(\frac{weight}{height^{2}}\)</span>.</li>
+<li>Remove BMI scores that are outside the specified range.</li>
+<li>Assign observation date to be the height or weight measurement which
+occurred first.</li>
+</ul></li>
+<li>Merge the directly recorded BMI scores, with the BMI scores
+calculated from height and weight.</li>
+<li>Take the most recent BMI score within the specified time period,
+whether it was a directly recorded BMI score, or calculated from height
+and weight. If both are recorded on the same date, the directly recorded
+BMI score takes preference.</li>
+</ul>
+</div>
+<div id="cholesterolhdl-ratio-extract_cholhdl_ratio" class="section level2" number="2.2">
+<h2><span class="header-section-number">2.2</span> Cholesterol/HDL ratio
+(<code>extract_cholhdl_ratio</code>)</h2>
+<p>Extraction of cholesterol/HDL ratio requires the user to specify
+three codelists. One for cholesterol/HDL ratio measurements
+(<code>codelist_ratio</code>), one for total cholesterol measurements
+(<code>codelist_chol</code>) and one for HDL measurements
+(<code>codelist_hdl</code>). All the cholesterol/HDL, total cholesterol
+and cholesterol/HDL measurements for each patient in the cohort of
+interest are then extracted. The algorithm is as follows:</p>
+<ul>
+<li>Extract the most recent cholesterol/HDL, total cholesterol and
+cholesterol/HDL measurements (within the specified time period)
+according to the user inputted code lists. Observation dates identified
+using variable <em>obsdate</em>.
+<ul>
+<li>The measurements must be non-missing</li>
+<li>The cholesterol/HDL ratio measurements must be within the
+user-defined valid range.</li>
+</ul></li>
+<li>All measurements are assumed to be in the correct unit of
+measurement (see section 3).</li>
+<li>Merge total cholesterol and HDL measurements.
+<ul>
+<li>Calculate cholesterol/HDL for every pair of total cholesterol and
+HDL measurements using <span class="math inline">\(\frac{total
+cholesterol}{HDL}\)</span>.</li>
+<li>Remove cholesterol/HDL scores that are outside the specified
+range.</li>
+<li>Assign observation date to be the total cholesterol or HDL
+measurement which occurred first.</li>
+</ul></li>
+<li>Merge the directly recorded cholesterol/HDL scores, with the
+cholesterol/HDL scores calculated from total cholesterol and HDL.</li>
+<li>Take the most recent cholesterol/HDL score within the specified time
+period, whether it was a directly recorded cholesterol/HDL score, or
+calculated from total cholesterol and HDL. If both are recorded on the
+same date, the directly recorded cholesterol/HDL score takes
+preference.</li>
+</ul>
+</div>
+<div id="diabetes-status-extract_diabetes" class="section level2" number="2.3">
+<h2><span class="header-section-number">2.3</span> Diabetes status
+(<code>extract_diabetes</code>)</h2>
+<p>Extraction of diabetes status requires the user to specify two
+codelists. One for type 1 diabetes (<code>codelist_type1</code>), and
+another for type 2 diabetes (<code>codelist_type2</code>). The reason
+this variable is not treated as a <code>history of</code> type variable
+and extracted using <code>extract_ho</code> is because often individuals
+will have a generic code such as <em>diabetes mellitus</em>, which would
+be used to identify type 2 diabetes, but will also have a specific code
+such as <em>type 1 diabetes mellitus</em>. This algorithm treats the two
+as mutually exclusive, and assigns individuals with a code for both type
+1 and type 1 diabetes, as having type 1 diabetes. The algorithm is as
+follows:</p>
+<ul>
+<li>Extract type 1 diabetes and type 2 diabetes observations that
+occurred prior to the index date. Observation dates identified using
+variable <em>obsdate</em>.</li>
+<li>Assign diabetes status.
+<ul>
+<li>If an individual has a code for both type 1 and type 2 diabetes,
+assign diabetes type 1.</li>
+</ul></li>
+</ul>
+</div>
+<div id="smoking-status-extract_smoking" class="section level2" number="2.4">
+<h2><span class="header-section-number">2.4</span> Smoking status
+(<code>extract_smoking</code>)</h2>
+<p>Extraction of smoking status requires the user to specify five
+codelists. One for non-smoker (<code>codelist_non</code>), one for
+ex-smoker (<code>codelist_ex</code>), one for light smoker
+(<code>codelist_light</code>), one for moderate smoker
+(<code>codelist.moderate</code>) and one for heavy smoker
+(<code>codelist_heavy</code>). For records identified using the light,
+moderate or heavy smoker code lists, the <em>value</em> variable, which
+represents number of cigarettes smoker per day, is used to modify the
+outputted smoking status variable. This is to maximise the number of
+observations that are defined in the same way (&lt; 10 day is light, 10
+- 19 a day is moderate, &gt; 19 is heavy). The <em>value</em> variable
+for observations recorded as ex-smoker are often denoting the number of
+cigarettes per day the individual used to smoke, therefore this data is
+not used to alter the smoking status. If an individuals most recent
+record is a non-smoker, but an individual has previous records which
+indicate a history of smoking, the smoking status is altered from
+non-smoker to ex-smoker. The algorithm is as follows:</p>
+<ul>
+<li>Extract the 100 most recent non, ex, light, moderate and heavy
+smoker observations according to the user inputted code lists.
+Observation dates identified using variable <em>obsdate</em>.</li>
+<li>If the <em>value</em> variable is non-missing for an observation
+identified using the light, moderate or heavy smoker code lists,
+re-define this to represent smoking status based on the following
+definition:
+<ul>
+<li>1 - 9 per day = light smoker.</li>
+<li>10 - 19 per day = moderate smoker.</li>
+<li>19 - 100 per day = heavy smoker.</li>
+<li>More than 100 per day, remove observation.</li>
+</ul></li>
+<li>Define smoking status to be the most recent observation.</li>
+<li>If there are multiple on the same date, use the most severe smoking
+status.</li>
+<li>If the most recent observation is non-smoker, but there are codes
+for ex, light, moderate or heavy smoker prior to this, change to
+ex-smoker.</li>
+</ul>
+</div>
+</div>
+<div id="summary-of-units-of-measurement-for-test-data" class="section level1" number="3">
+<h1><span class="header-section-number">3</span> Summary of units of
+measurement for test data</h1>
+<p>In this section we report the different units of measurement that the
+test data for the above variables may be recorded in. The unit of
+measurement is denoted with the <em>numunitid</em> variable in the
+observation file, which has a corresponding lookup file in the CPRD
+data. We queried the observation data for a large cohort of individuals
+aged 18 - 85 between 2005 - 2020 using the code lists provided within
+<em>inst/codelists</em> directory of <strong>rcprd</strong>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">list.files</span>(<span class="fu">system.file</span>(<span class="st">&quot;codelists&quot;</span>, <span class="at">package =</span> <span class="st">&quot;rcprd&quot;</span>))</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="co">#&gt; [1] &quot;edh_bmi_medcodeid.csv&quot;           &quot;edh_chol_medcodeid.csv&quot;         </span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt; [3] &quot;edh_cholhdl_ratio_medcodeid.csv&quot; &quot;edh_hdl_medcodeid.csv&quot;          </span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt; [5] &quot;edh_sbp_medcodeid.csv&quot;           &quot;height_medcodeid.csv&quot;           </span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt; [7] &quot;weight_medcodeid.csv&quot;</span></span></code></pre></div>
+<p>The test data was searched separately using each code list, and the
+resulting unit measurements that were recorded in more than 0.01% of the
+query are presented. The results of this were fed into the programs for
+deriving each of those variables (see section 2). When defining a
+variable, the aim is to convert all measurements to be on the scame
+scale/unit of measurement. For example, height measurements in metres
+should be converted to the same scale as those recorded in centimeters.
+However, for some records, the unit of measurement might be something
+odd, or missing, meaning it is unclear how to convert onto the desired
+scale. For observations with such unit measurements, we do not exclude
+these observations, as they may be correct measurements with a
+mis-recorded unit measurement. Instead, when extracting variables, and
+converting relevant unit measurements, we define a minimum and maximum
+value, and exclude observations that do not fit into this range. As will
+be seen below, the proportion of observations with unclear unit
+measurement is small (with the exception of cholesterol/hdl ratio, which
+is a special case).</p>
+<table>
+<caption>Unit measurements for cholesterol/high-density lipoprotein
+ratio</caption>
+<thead>
+<tr class="header">
+<th align="right">numunitid</th>
+<th align="right">n</th>
+<th align="left">Description</th>
+<th align="right">prop</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">65</td>
+<td align="right">49</td>
+<td align="left">1/1</td>
+<td align="right">0.15</td>
+</tr>
+<tr class="even">
+<td align="right">218</td>
+<td align="right">47</td>
+<td align="left">mmol/L</td>
+<td align="right">0.14</td>
+</tr>
+<tr class="odd">
+<td align="right">219</td>
+<td align="right">429</td>
+<td align="left">mmol/mmol</td>
+<td align="right">1.32</td>
+</tr>
+<tr class="even">
+<td align="right">260</td>
+<td align="right">284</td>
+<td align="left">ratio</td>
+<td align="right">0.88</td>
+</tr>
+<tr class="odd">
+<td align="right">292</td>
+<td align="right">132</td>
+<td align="left">Unk UoM</td>
+<td align="right">0.41</td>
+</tr>
+<tr class="even">
+<td align="right">405</td>
+<td align="right">18</td>
+<td align="left">UNKNOWN UNITS</td>
+<td align="right">0.06</td>
+</tr>
+<tr class="odd">
+<td align="right">421</td>
+<td align="right">24</td>
+<td align="left">.</td>
+<td align="right">0.07</td>
+</tr>
+<tr class="even">
+<td align="right">986</td>
+<td align="right">154</td>
+<td align="left">Not given</td>
+<td align="right">0.47</td>
+</tr>
+<tr class="odd">
+<td align="right">4424</td>
+<td align="right">728</td>
+<td align="left">CHOL/HDL</td>
+<td align="right">2.24</td>
+</tr>
+<tr class="even">
+<td align="right">NA</td>
+<td align="right">30580</td>
+<td align="left">NA</td>
+<td align="right">94.24</td>
+</tr>
+</tbody>
+</table>
+<p>The most common is ‘NA’ (78.95%). The second most common is ‘ratio’
+(12.49%) then 1/1 (2.33%). The confusion about unit of measurement is
+likely due to the fact that this ratio has no unit of measurement,
+because total cholesterol and high-density lipoprotein have the same
+unit of measurement. All measurements are therefore assumed to be in the
+same unit of measurement (ratio).</p>
+<table>
+<caption>Unit measurements for total cholesterol</caption>
+<thead>
+<tr class="header">
+<th align="right">numunitid</th>
+<th align="right">n</th>
+<th align="left">Description</th>
+<th align="right">prop</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">218</td>
+<td align="right">67168</td>
+<td align="left">mmol/L</td>
+<td align="right">92.74</td>
+</tr>
+<tr class="even">
+<td align="right">NA</td>
+<td align="right">5256</td>
+<td align="left">NA</td>
+<td align="right">7.26</td>
+</tr>
+</tbody>
+</table>
+<p>The majority of unit measurements are mmol/L (96.35%) or NA (3.54%).
+All observations are therefore assumed to be recorded in mmol/L.</p>
+<table>
+<caption>Unit measurements for high-density lipoprotein</caption>
+<thead>
+<tr class="header">
+<th align="right">numunitid</th>
+<th align="right">n</th>
+<th align="left">Description</th>
+<th align="right">prop</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">182</td>
+<td align="right">80</td>
+<td align="left">MG/DL</td>
+<td align="right">0.16</td>
+</tr>
+<tr class="even">
+<td align="right">218</td>
+<td align="right">46573</td>
+<td align="left">mmol/L</td>
+<td align="right">92.04</td>
+</tr>
+<tr class="odd">
+<td align="right">288</td>
+<td align="right">12</td>
+<td align="left">units</td>
+<td align="right">0.02</td>
+</tr>
+<tr class="even">
+<td align="right">NA</td>
+<td align="right">3936</td>
+<td align="left">NA</td>
+<td align="right">7.78</td>
+</tr>
+</tbody>
+</table>
+<p>The majority of unit measurements are mmol/L (94.21%) or NA (5.67%).
+All observations are therefore assumed to be recorded in mmol/L.</p>
+<table>
+<caption>Unit measurements for body mass index</caption>
+<thead>
+<tr class="header">
+<th align="right">numunitid</th>
+<th align="right">n</th>
+<th align="left">Description</th>
+<th align="right">prop</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">108</td>
+<td align="right">21</td>
+<td align="left">Body Mass Index</td>
+<td align="right">0.02</td>
+</tr>
+<tr class="even">
+<td align="right">157</td>
+<td align="right">64943</td>
+<td align="left">kg/m2</td>
+<td align="right">52.02</td>
+</tr>
+<tr class="odd">
+<td align="right">288</td>
+<td align="right">21</td>
+<td align="left">units</td>
+<td align="right">0.02</td>
+</tr>
+<tr class="even">
+<td align="right">359</td>
+<td align="right">35</td>
+<td align="left">Kg/m?</td>
+<td align="right">0.03</td>
+</tr>
+<tr class="odd">
+<td align="right">568</td>
+<td align="right">99</td>
+<td align="left">BMI</td>
+<td align="right">0.08</td>
+</tr>
+<tr class="even">
+<td align="right">657</td>
+<td align="right">105</td>
+<td align="left">Kg/mÂ²</td>
+<td align="right">0.08</td>
+</tr>
+<tr class="odd">
+<td align="right">NA</td>
+<td align="right">59555</td>
+<td align="left">NA</td>
+<td align="right">47.70</td>
+</tr>
+</tbody>
+</table>
+<p>The majority of unit measurements are kg/m2 (39.58%), kg/mA2 (1.26%)
+or NA (58.08%). All observations are therefore assumed to be recorded in
+kg/m2.</p>
+<table>
+<caption>Unit measurements for weight</caption>
+<thead>
+<tr class="header">
+<th align="right">numunitid</th>
+<th align="right">n</th>
+<th align="left">Description</th>
+<th align="right">prop</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">156</td>
+<td align="right">148873</td>
+<td align="left">kg</td>
+<td align="right">99.42</td>
+</tr>
+<tr class="even">
+<td align="right">827</td>
+<td align="right">80</td>
+<td align="left">Kgs</td>
+<td align="right">0.05</td>
+</tr>
+<tr class="odd">
+<td align="right">NA</td>
+<td align="right">773</td>
+<td align="left">NA</td>
+<td align="right">0.52</td>
+</tr>
+</tbody>
+</table>
+<p>The majority of unit measurements are kg (98.67%) or NA (1.24%). Most
+observations are therefore assumed to be recorded in kg, however we also
+know from that for numunitid <span class="math inline">\(\in {1691,
+2318, 2997 or 6265}\)</span>, this refers to stone. Observations with
+these units of measurements are therefore converted to kg.</p>
+<table>
+<caption>Unit measurements for height</caption>
+<thead>
+<tr class="header">
+<th align="right">numunitid</th>
+<th align="right">n</th>
+<th align="left">Description</th>
+<th align="right">prop</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">210</td>
+<td align="right">174602</td>
+<td align="left">mm Hg</td>
+<td align="right">53.44</td>
+</tr>
+<tr class="even">
+<td align="right">212</td>
+<td align="right">11013</td>
+<td align="left">mm/Hg</td>
+<td align="right">3.37</td>
+</tr>
+<tr class="odd">
+<td align="right">215</td>
+<td align="right">12296</td>
+<td align="left">mm[Hg]</td>
+<td align="right">3.76</td>
+</tr>
+<tr class="even">
+<td align="right">216</td>
+<td align="right">128757</td>
+<td align="left">mmHg</td>
+<td align="right">39.41</td>
+</tr>
+<tr class="odd">
+<td align="right">NA</td>
+<td align="right">66</td>
+<td align="left">NA</td>
+<td align="right">0.02</td>
+</tr>
+</tbody>
+</table>
+<p>The majority of unit measurements are cm (96.82%), m (1.7%), metres
+(0.02%) or NA (.37%). All observations with numunit not corresponding to
+metres, will be assumed to be in centimetres, and converted to metres to
+enable estimation of BMI.</p>
+<table>
+<caption>Unit measurements for systolic blood pressure</caption>
+<thead>
+<tr class="header">
+<th align="right">numunitid</th>
+<th align="right">n</th>
+<th align="left">Description</th>
+<th align="right">prop</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">210</td>
+<td align="right">174602</td>
+<td align="left">mm Hg</td>
+<td align="right">53.44</td>
+</tr>
+<tr class="even">
+<td align="right">212</td>
+<td align="right">11013</td>
+<td align="left">mm/Hg</td>
+<td align="right">3.37</td>
+</tr>
+<tr class="odd">
+<td align="right">215</td>
+<td align="right">12296</td>
+<td align="left">mm[Hg]</td>
+<td align="right">3.76</td>
+</tr>
+<tr class="even">
+<td align="right">216</td>
+<td align="right">128757</td>
+<td align="left">mmHg</td>
+<td align="right">39.41</td>
+</tr>
+<tr class="odd">
+<td align="right">NA</td>
+<td align="right">66</td>
+<td align="left">NA</td>
+<td align="right">0.02</td>
+</tr>
+</tbody>
+</table>
+<p>While there is not a unique algorithm for SBP, we still present the
+results from the database query for this variable. All measurement are
+in mm/Hg.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
