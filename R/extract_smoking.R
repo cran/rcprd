@@ -15,12 +15,18 @@
 #' @param codelist_light_vector Vector of codes for light smoker to query the database with.
 #' @param codelist_mod_vector Vector of codes for moderate smoker to query the database with.
 #' @param codelist_heavy_vector Vector of codes for heavy smoker to query the database with.
+#' @param codelist_non_df data.frame of codes for non-smoker to query the database with.
+#' @param codelist_ex_df data.frame of codes for ex-smoker to query the database with.
+#' @param codelist_light_df data.frame of codes for light smoker to query the database with.
+#' @param codelist_mod_df data.frame of codes for moderate smoker to query the database with.
+#' @param codelist_heavy_df data.frame of codes for heavy smoker to query the database with.
 #' @param indexdt Name of variable which defines index date in `cohort`.
 #' @param t Number of days after index date at which to calculate variable.
 #' @param t_varname Whether to add `t` to `varname`.
 #' @param db_open An open SQLite database connection created using RSQLite::dbConnect, to be queried.
 #' @param db Name of SQLITE database on hard disk (stored in "data/sql/"), to be queried.
 #' @param db_filepath Full filepath to SQLITE database on hard disk, to be queried.
+#' @param table_name Specify name of table in the SQLite database to be queried, if this is different from 'observation'.
 #' @param out_save_disk If `TRUE` will attempt to save outputted data frame to directory "data/extraction/".
 #' @param out_subdir Sub-directory of "data/extraction/" to save outputted data frame into.
 #' @param out_filepath Full filepath and filename to save outputted data frame into.
@@ -48,6 +54,9 @@
 #'
 #' We take the most recent smoking status record. If an individuals most recent smoking status is a non-smoker,
 #' but they have a history of smoking prior to this, these individuals will be classed as ex-smokers.
+#'
+#' The argument `table_name` is only necessary if the name of the table being queried does not match 'observation'. This will occur when
+#' `str_match` is used in `cprd_extract` or `add_to_database` to create the .sqlite database.
 #'
 #' @returns A data frame with variable smoking status.
 #'
@@ -93,12 +102,18 @@ extract_smoking <- function(cohort,
                             codelist_light_vector = NULL,
                             codelist_mod_vector = NULL,
                             codelist_heavy_vector = NULL,
+                            codelist_non_df = NULL,
+                            codelist_ex_df = NULL,
+                            codelist_light_df = NULL,
+                            codelist_mod_df = NULL,
+                            codelist_heavy_df = NULL,
                             indexdt,
                             t = NULL,
                             t_varname = TRUE,
                             db_open = NULL,
                             db = NULL,
                             db_filepath = NULL,
+                            table_name = NULL,
                             out_save_disk = FALSE,
                             out_subdir = NULL,
                             out_filepath = NULL,
@@ -138,35 +153,45 @@ extract_smoking <- function(cohort,
                          db = db,
                          db_filepath = db_filepath,
                          tab = "observation",
-                         codelist_vector = codelist_non_vector)
+                         table_name = table_name,
+                         codelist_vector = codelist_non_vector,
+                         codelist_df = codelist_non_df)
 
   db.qry.ex <- db_query(codelist_ex,
                         db_open = db_open,
                         db = db,
                         db_filepath = db_filepath,
                         tab = "observation",
-                        codelist_vector = codelist_ex_vector)
+                        table_name = table_name,
+                        codelist_vector = codelist_ex_vector,
+                        codelist_df = codelist_ex_df)
 
   db.qry.light <- db_query(codelist_light,
                            db_open = db_open,
                            db = db,
                            db_filepath = db_filepath,
                            tab = "observation",
-                           codelist_vector = codelist_light_vector)
+                           table_name = table_name,
+                           codelist_vector = codelist_light_vector,
+                           codelist_df = codelist_light_df)
 
   db.qry.mod <- db_query(codelist_mod,
                          db_open = db_open,
                          db = db,
                          db_filepath = db_filepath,
                          tab = "observation",
-                         codelist_vector = codelist_mod_vector)
+                         table_name = table_name,
+                         codelist_vector = codelist_mod_vector,
+                         codelist_df = codelist_mod_df)
 
   db.qry.heavy <- db_query(codelist_heavy,
                            db_open = db_open,
                            db = db,
                            db_filepath = db_filepath,
                            tab = "observation",
-                           codelist_vector = codelist_heavy_vector)
+                           table_name = table_name,
+                           codelist_vector = codelist_heavy_vector,
+                           codelist_df = codelist_heavy_df)
 
   ### Combine queries with cohort, retaining all smoking records prior to the index date
   ### We treat this as test data, because smoking status may be identified through number of cigarettes smoked per day
@@ -175,30 +200,35 @@ extract_smoking <- function(cohort,
   smoking.non <- combine_query(db_query = db.qry.non,
                                cohort= cohort,
                                query_type = "test",
+                               time_post = 0,
                                numobs = Inf,
                                value_na_rm = FALSE)
 
   smoking.ex <- combine_query(db_query = db.qry.ex,
                               cohort = cohort,
                               query_type = "test",
+                              time_post = 0,
                               numobs = Inf,
                               value_na_rm = FALSE)
 
   smoking.light <- combine_query(db_query = db.qry.light,
                                  cohort = cohort,
                                  query_type = "test",
+                                 time_post = 0,
                                  numobs = Inf,
                                  value_na_rm = FALSE)
 
   smoking.mod <- combine_query(db_query = db.qry.mod,
                                cohort = cohort,
                                query_type = "test",
+                               time_post = 0,
                                numobs = Inf,
                                value_na_rm = FALSE)
 
   smoking.heavy <- combine_query(db_query = db.qry.heavy,
                                  cohort = cohort,
                                  query_type = "test",
+                                 time_post = 0,
                                  numobs = Inf,
                                  value_na_rm = FALSE)
 
@@ -256,29 +286,14 @@ extract_smoking <- function(cohort,
   smoking.mod <- smoking.mod[!is.na(smoking)]
   smoking.heavy <- smoking.heavy[!is.na(smoking)]
 
-  ### Only retain the most recent observation for each
-  smoking.non <- smoking.non |>
-    dplyr::group_by(patid) |>
-    dplyr::filter(dplyr::row_number(dplyr::desc(obsdate)) == 1)
-
-  smoking.ex <- smoking.ex |>
-    dplyr::group_by(patid) |>
-    dplyr::filter(dplyr::row_number(dplyr::desc(obsdate)) == 1)
-
-  smoking.light <- smoking.light |>
-    dplyr::group_by(patid) |>
-    dplyr::filter(dplyr::row_number(dplyr::desc(obsdate)) == 1)
-
-  smoking.mod <- smoking.mod |>
-    dplyr::group_by(patid) |>
-    dplyr::filter(dplyr::row_number(dplyr::desc(obsdate)) == 1)
-
-  smoking.heavy <- smoking.heavy |>
-    dplyr::group_by(patid) |>
-    dplyr::filter(dplyr::row_number(dplyr::desc(obsdate)) == 1)
-
   ### Concatenate
-  variable_dat <- rbind(smoking.non, smoking.ex, smoking.light, smoking.mod, smoking.heavy)
+  variable_dat <- rbind(smoking.non, smoking.ex, smoking.light, smoking.mod, smoking.heavy) |>
+    dplyr::arrange(patid, smoking, dplyr::desc(obsdate))
+
+  ### Only retain the most recent observation for each
+  variable_dat <- variable_dat |>
+    dplyr::group_by(patid, smoking) |>
+    dplyr::filter(dplyr::row_number(dplyr::desc(obsdate)) == 1)
 
   ### Arrange so that the first observation is the most recent
   ### If there are multiple on the same day, we take the most severe smoking status

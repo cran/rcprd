@@ -9,6 +9,7 @@ extract_test_data(
   varname = NULL,
   codelist = NULL,
   codelist_vector = NULL,
+  codelist_df = NULL,
   indexdt,
   t = NULL,
   t_varname = TRUE,
@@ -21,6 +22,7 @@ extract_test_data(
   db_open = NULL,
   db = NULL,
   db_filepath = NULL,
+  table_name = NULL,
   out_save_disk = FALSE,
   out_subdir = NULL,
   out_filepath = NULL,
@@ -34,7 +36,9 @@ extract_test_data(
 
 \item{codelist}{Name of codelist (stored on hard disk) to query the database with.}
 
-\item{codelist_vector}{Vector of codes to query the database with. This takes precedent over \code{codelist} if both are specified.}
+\item{codelist_vector}{Vector of codes to query the database with.}
+
+\item{codelist_df}{data.frame used to specify the codelist.}
 
 \item{indexdt}{Name of variable in \code{cohort} which specifies the index date. The extracted variable will be calculated relative to this.}
 
@@ -52,13 +56,15 @@ extract_test_data(
 
 \item{numobs}{Number of test results to return. Will return most recent values that are in the valid time and bound ranges.}
 
-\item{keep_numunit}{TRUE/FALSE whether to keep numunitid, medcodeid and obsdate in the outputted dataset}
+\item{keep_numunit}{TRUE/FALSE whether to keep numunitid, medcodeid and obsdate in the outputted dataset.}
 
 \item{db_open}{An open SQLite database connection created using RSQLite::dbConnect, to be queried.}
 
 \item{db}{Name of SQLITE database on hard disk (stored in "data/sql/"), to be queried.}
 
 \item{db_filepath}{Full filepath to SQLITE database on hard disk, to be queried.}
+
+\item{table_name}{Specify name of table in the SQLite database to be queried, if this is different from 'observation'.}
 
 \item{out_save_disk}{If \code{TRUE} will attempt to save outputted data frame to directory "data/extraction/".}
 
@@ -85,13 +91,18 @@ This directory structure must be created in advance. \code{out_subdir} can be us
 using \code{out_filepath} to manually specify the location on the hard disk to save. Alternatively, return the data frame into the R workspace using \code{return_output = TRUE}
 and then save onto the hard disk manually.
 
-Codelists can be specified in two ways. The first is to read the codelist into R as a character vector and then specify through the argument
-\code{codelist_vector}. Codelists stored on the hard disk can also be referred to from the \code{codelist} argument, but require a specific underlying directory structure.
+Codelists can be specified in three ways. The first is to read the codelist into R as a character vector and then specify through the argument
+\code{codelist_vector}. The second is codelists stored on the hard disk, which can = be referred to from the \code{codelist} argument, but require a specific underlying directory structure.
 The codelist on the hard disk must be stored in a directory called "codelists/analysis/" relative to the working directory. The codelist must be a .csv file, and
-contain a column "medcodeid", "prodcodeid" or "ICD10" depending on the input for argument \code{tab}. The input to argument \code{codelist} should just be a character string of
-the name of the files (excluding the suffix '.csv'). The \code{codelist_vector} option will take precedence over the \code{codelist} argument if both are specified.
+contain a column "medcodeid", "prodcodeid" or "ICD10" depending on the input for argument \code{tab}. The input to argument \code{codelist} must be a character string of
+the name of the files (excluding the suffix '.csv').  The third is to specify the codelist through an R data.frame, \code{codelist_df},
+this must contain a column "medcodeid", "prodcodeid" or "ICD10" depending on the chosen \code{tab}. Specifying the codelist this way will retain all the other
+columns from \code{codelist_df} in the queried output.
 
 Currently only returns most recent test result. This will be updated to return more than one most recent test result if specified.
+
+The argument \code{table_name} is only necessary if the name of the table being queried does not match 'observation'. This will occur when
+\code{str_match} is used in \code{cprd_extract} or \code{add_to_database} to create the .sqlite database.
 }
 \examples{
 

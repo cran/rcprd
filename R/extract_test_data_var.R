@@ -7,6 +7,7 @@
 #' @param varname Name of variable in the outputted data frame.
 #' @param codelist Name of codelist (stored on hard disk) to query the database with.
 #' @param codelist_vector Vector of codes to query the database with. This takes precedent over `codelist` if both are specified.
+#' @param codelist_df data.frame used to specify the codelist.
 #' @param indexdt Name of variable in `cohort` which specifies the index date. The extracted variable will be calculated relative to this.
 #' @param t Number of days after \code{indexdt} at which to extract the variable.
 #' @param t_varname Whether to alter the variable name in the outputted data frame to reflect `t`.
@@ -17,6 +18,7 @@
 #' @param db_open An open SQLite database connection created using RSQLite::dbConnect, to be queried.
 #' @param db Name of SQLITE database on hard disk (stored in "data/sql/"), to be queried.
 #' @param db_filepath Full filepath to SQLITE database on hard disk, to be queried.
+#' @param table_name Specify name of table in the SQLite database to be queried, if this is different from 'observation'.
 #' @param out_save_disk If `TRUE` will attempt to save outputted data frame to directory "data/extraction/".
 #' @param out_subdir Sub-directory of "data/extraction/" to save outputted data frame into.
 #' @param out_filepath Full filepath and filename to save outputted data frame into.
@@ -33,6 +35,9 @@
 #' and then save onto the hard disk manually.
 #'
 #' Currently only returns most recent test result. This will be updated to return more than one most recent test result if specified.
+#'
+#' The argument `table_name` is only necessary if the name of the table being queried does not match 'observation'. This will occur when
+#' `str_match` is used in `cprd_extract` or `add_to_database` to create the .sqlite database.
 #'
 #' @returns A data frame containing standard deviation of test results.
 #'
@@ -65,8 +70,9 @@
 #' @export
 extract_test_data_var <- function(cohort,
                                   varname = NULL,
-                                  codelist,
-                                  codelist_vector,
+                                  codelist = NULL,
+                                  codelist_vector = NULL,
+                                  codelist_df = NULL,
                                   indexdt,
                                   t = NULL,
                                   t_varname = TRUE,
@@ -77,6 +83,7 @@ extract_test_data_var <- function(cohort,
                                   db_open = NULL,
                                   db = NULL,
                                   db_filepath = NULL,
+                                  table_name = NULL,
                                   out_save_disk = FALSE,
                                   out_subdir = NULL,
                                   out_filepath = NULL,
@@ -117,7 +124,10 @@ extract_test_data_var <- function(cohort,
                      db = db,
                      db_filepath = db_filepath,
                      tab = "observation",
-                     codelist_vector = codelist_vector)
+                     table_name = table_name,
+                     codelist_vector = codelist_vector,
+                     codelist_df = codelist_df,
+                     rm_duplicates = TRUE)
 
   ### Get test data for individuals in cohort, within time range and remove outliers
   variable_dat <- combine_query(db_query = db.qry,
@@ -127,7 +137,7 @@ extract_test_data_var <- function(cohort,
                                 time_post = time_post,
                                 lower_bound = lower_bound,
                                 upper_bound = upper_bound,
-                                numobs = 1000)
+                                numobs = 10000)
 
   ### Create a dataframe of patids for individuals who have more than one observation
   patids.multiple <- variable_dat[duplicated(variable_dat$patid)] |>

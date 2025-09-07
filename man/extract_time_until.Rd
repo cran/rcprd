@@ -10,6 +10,7 @@ extract_time_until(
   varname_indicator = NULL,
   codelist = NULL,
   codelist_vector = NULL,
+  codelist_df = NULL,
   indexdt,
   censdt,
   censdt_lag = 0,
@@ -19,6 +20,7 @@ extract_time_until(
   db = NULL,
   db_filepath = NULL,
   tab = c("observation", "drugissue", "hes_primary", "death"),
+  table_name = NULL,
   out_save_disk = FALSE,
   out_subdir = NULL,
   out_filepath = NULL,
@@ -35,6 +37,8 @@ extract_time_until(
 \item{codelist}{Name of codelist (stored on hard disk) to query the database with.}
 
 \item{codelist_vector}{Vector of codes to query the database with. This takes precedent over \code{codelist} if both are specified.}
+
+\item{codelist_df}{data.frame used to specify the codelist.}
 
 \item{indexdt}{Name of variable in \code{cohort} which specifies the index date. The extracted variable will be calculated relative to this.}
 
@@ -53,6 +57,8 @@ extract_time_until(
 \item{db_filepath}{Full filepath to SQLITE database on hard disk, to be queried.}
 
 \item{tab}{Table name to query in SQLite database.}
+
+\item{table_name}{Specify name of table in the SQLite database to be queried, if this is different from \code{tab}.}
 
 \item{out_save_disk}{If \code{TRUE} will attempt to save outputted data frame to directory "data/extraction/".}
 
@@ -79,15 +85,20 @@ This directory structure must be created in advance. \code{out_subdir} can be us
 using \code{out_filepath} to manually specify the location on the hard disk to save. Alternatively, return the data frame into the R workspace using \code{return_output = TRUE}
 and then save onto the hard disk manually.
 
-Codelists can be specified in two ways. The first is to read the codelist into R as a character vector and then specify through the argument
-\code{codelist_vector}. Codelists stored on the hard disk can also be referred to from the \code{codelist} argument, but require a specific underlying directory structure.
+Codelists can be specified in three ways. The first is to read the codelist into R as a character vector and then specify through the argument
+\code{codelist_vector}. The second is codelists stored on the hard disk, which can = be referred to from the \code{codelist} argument, but require a specific underlying directory structure.
 The codelist on the hard disk must be stored in a directory called "codelists/analysis/" relative to the working directory. The codelist must be a .csv file, and
-contain a column "medcodeid", "prodcodeid" or "ICD10" depending on the input for argument \code{tab}. The input to argument \code{codelist} should just be a character string of
-the name of the files (excluding the suffix '.csv'). The \code{codelist_vector} option will take precedence over the \code{codelist} argument if both are specified.
+contain a column "medcodeid", "prodcodeid" or "ICD10" depending on the input for argument \code{tab}. The input to argument \code{codelist} must be a character string of
+the name of the files (excluding the suffix '.csv').  The third is to specify the codelist through an R data.frame, \code{codelist_df},
+this must contain a column "medcodeid", "prodcodeid" or "ICD10" depending on the chosen \code{tab}. Specifying the codelist this way will retain all the other
+columns from \code{codelist_df} in the queried output.
 
 If the time until event is the same as time until censored, this will be considered an event (var_indicator = 1)
 
 If \code{dtcens.lag > 0}, then the time until the event of interest will be the time until the minimum of the event of interest, and date of censoring.
+
+The argument \code{table_name} is only necessary if the name of the table being queried does not match the CPRD filetype specified in \code{tab}. This will occur when
+\code{str_match} is used in \code{cprd_extract} or \code{add_to_database} to create the .sqlite database.
 }
 \examples{
 

@@ -8,6 +8,7 @@
 #' @param varname Name of variable in the outputted data frame.
 #' @param codelist Name of codelist (stored on hard disk) to query the database with.
 #' @param codelist_vector Vector of codes to query the database with. This takes precedent over `codelist` if both are specified.
+#' @param codelist_df data.frame used to specify the codelist.
 #' @param indexdt Name of variable in `cohort` which specifies the index date. The extracted variable will be calculated relative to this.
 #' @param t Number of days after \code{indexdt} at which to extract the variable.
 #' @param t_varname Whether to alter the variable name in the outputted data frame to reflect `t`.
@@ -18,6 +19,7 @@
 #' @param db Name of SQLITE database on hard disk (stored in "data/sql/"), to be queried.
 #' @param db_filepath Full filepath to SQLITE database on hard disk, to be queried.
 #' @param tab Table name to query in SQLite database.
+#' @param table_name Specify name of table in the SQLite database to be queried, if this is different from `tab`.
 #' @param out_save_disk If `TRUE` will attempt to save outputted data frame to directory "data/extraction/".
 #' @param out_subdir Sub-directory of "data/extraction/" to save outputted data frame into.
 #' @param out_filepath Full filepath and filename to save outputted data frame into.
@@ -33,11 +35,16 @@
 #' using `out_filepath` to manually specify the location on the hard disk to save. Alternatively, return the data frame into the R workspace using `return_output = TRUE`
 #' and then save onto the hard disk manually.
 #'
-#' Codelists can be specified in two ways. The first is to read the codelist into R as a character vector and then specify through the argument
-#' `codelist_vector`. Codelists stored on the hard disk can also be referred to from the `codelist` argument, but require a specific underlying directory structure.
+#' Codelists can be specified in three ways. The first is to read the codelist into R as a character vector and then specify through the argument
+#' `codelist_vector`. The second is codelists stored on the hard disk, which can = be referred to from the `codelist` argument, but require a specific underlying directory structure.
 #' The codelist on the hard disk must be stored in a directory called "codelists/analysis/" relative to the working directory. The codelist must be a .csv file, and
-#' contain a column "medcodeid", "prodcodeid" or "ICD10" depending on the input for argument `tab`. The input to argument `codelist` should just be a character string of
-#' the name of the files (excluding the suffix '.csv'). The `codelist_vector` option will take precedence over the `codelist` argument if both are specified.
+#' contain a column "medcodeid", "prodcodeid" or "ICD10" depending on the input for argument `tab`. The input to argument `codelist` must be a character string of
+#' the name of the files (excluding the suffix '.csv').  The third is to specify the codelist through an R data.frame, `codelist_df`,
+#' this must contain a column "medcodeid", "prodcodeid" or "ICD10" depending on the chosen `tab`. Specifying the codelist this way will retain all the other
+#' columns from `codelist_df` in the queried output.
+#'
+#' The argument `table_name` is only necessary if the name of the table being queried does not match the CPRD filetype specified in `tab`. This will occur when
+#' `str_match` is used in `cprd_extract` or `add_to_database` to create the .sqlite database.
 #'
 #' @returns A data frame with a 0/1 vector and patid. 1 = presence of code within the specified time period.
 #'
@@ -72,6 +79,7 @@ extract_ho <- function(cohort,
                        varname = NULL,
                        codelist = NULL,
                        codelist_vector = NULL,
+                       codelist_df = NULL,
                        indexdt,
                        t = NULL,
                        t_varname = TRUE,
@@ -82,6 +90,7 @@ extract_ho <- function(cohort,
                        db = NULL,
                        db_filepath = NULL,
                        tab = c("observation", "drugissue", "hes_primary", "death"),
+                       table_name = NULL,
                        out_save_disk = FALSE,
                        out_subdir = NULL,
                        out_filepath = NULL,
@@ -105,7 +114,9 @@ extract_ho <- function(cohort,
                      db = db,
                      db_filepath = db_filepath,
                      tab = tab,
-                     codelist_vector = codelist_vector)
+                     table_name = table_name,
+                     codelist_vector = codelist_vector,
+                     codelist_df = codelist_df)
 
   ### Assign query_type
   if (tab == "observation"){
@@ -122,7 +133,7 @@ extract_ho <- function(cohort,
                                          time_post = time_post,
                                          numobs = numobs)
 
-  ### Reduce to variables of interest
+  ### Reduce variable_dat to these vars
   variable_dat <- cohort[,c("patid", "ho")]
 
   ### Change name of variable to varname

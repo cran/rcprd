@@ -8,6 +8,7 @@
 #' @param varname_indicator Name of event/censoring indicator in the outputted data frame.
 #' @param codelist Name of codelist (stored on hard disk) to query the database with.
 #' @param codelist_vector Vector of codes to query the database with. This takes precedent over `codelist` if both are specified.
+#' @param codelist_df data.frame used to specify the codelist.
 #' @param indexdt Name of variable in `cohort` which specifies the index date. The extracted variable will be calculated relative to this.
 #' @param censdt Name of variable in `cohort` which specifies the censoring date.
 #' @param censdt_lag Number of days after censoring where events will still be considered, to account for delays in recording.
@@ -17,6 +18,7 @@
 #' @param db Name of SQLITE database on hard disk (stored in "data/sql/"), to be queried.
 #' @param db_filepath Full filepath to SQLITE database on hard disk, to be queried.
 #' @param tab Table name to query in SQLite database.
+#' @param table_name Specify name of table in the SQLite database to be queried, if this is different from `tab`.
 #' @param out_save_disk If `TRUE` will attempt to save outputted data frame to directory "data/extraction/".
 #' @param out_subdir Sub-directory of "data/extraction/" to save outputted data frame into.
 #' @param out_filepath Full filepath and filename to save outputted data frame into.
@@ -32,15 +34,20 @@
 #' using `out_filepath` to manually specify the location on the hard disk to save. Alternatively, return the data frame into the R workspace using `return_output = TRUE`
 #' and then save onto the hard disk manually.
 #'
-#' Codelists can be specified in two ways. The first is to read the codelist into R as a character vector and then specify through the argument
-#' `codelist_vector`. Codelists stored on the hard disk can also be referred to from the `codelist` argument, but require a specific underlying directory structure.
+#' Codelists can be specified in three ways. The first is to read the codelist into R as a character vector and then specify through the argument
+#' `codelist_vector`. The second is codelists stored on the hard disk, which can = be referred to from the `codelist` argument, but require a specific underlying directory structure.
 #' The codelist on the hard disk must be stored in a directory called "codelists/analysis/" relative to the working directory. The codelist must be a .csv file, and
-#' contain a column "medcodeid", "prodcodeid" or "ICD10" depending on the input for argument `tab`. The input to argument `codelist` should just be a character string of
-#' the name of the files (excluding the suffix '.csv'). The `codelist_vector` option will take precedence over the `codelist` argument if both are specified.
+#' contain a column "medcodeid", "prodcodeid" or "ICD10" depending on the input for argument `tab`. The input to argument `codelist` must be a character string of
+#' the name of the files (excluding the suffix '.csv').  The third is to specify the codelist through an R data.frame, `codelist_df`,
+#' this must contain a column "medcodeid", "prodcodeid" or "ICD10" depending on the chosen `tab`. Specifying the codelist this way will retain all the other
+#' columns from `codelist_df` in the queried output.
 #'
 #' If the time until event is the same as time until censored, this will be considered an event (var_indicator = 1)
 #'
 #' If `dtcens.lag > 0`, then the time until the event of interest will be the time until the minimum of the event of interest, and date of censoring.
+#'
+#' The argument `table_name` is only necessary if the name of the table being queried does not match the CPRD filetype specified in `tab`. This will occur when
+#' `str_match` is used in `cprd_extract` or `add_to_database` to create the .sqlite database.
 #'
 #' @returns A data frame with variable patid, a variable containing the time until event/censoring, and a variable containing event/censoring indicator.
 #'
@@ -78,6 +85,7 @@ extract_time_until <- function(cohort,
                                varname_indicator = NULL,
                                codelist = NULL,
                                codelist_vector = NULL,
+                               codelist_df = NULL,
                                indexdt,
                                censdt,
                                censdt_lag = 0,
@@ -87,6 +95,7 @@ extract_time_until <- function(cohort,
                                db = NULL,
                                db_filepath = NULL,
                                tab = c("observation", "drugissue", "hes_primary", "death"),
+                               table_name = NULL,
                                out_save_disk = FALSE,
                                out_subdir = NULL,
                                out_filepath = NULL,
@@ -127,7 +136,8 @@ extract_time_until <- function(cohort,
   colnames(cohort)[colnames(cohort) == censdt] <- "censdt"
 
   ## Reduce cohort to variables of interest
-  cohort <- cohort[,c("patid", "indexdt", "censdt")]
+  cohort <- cohort[,c("patid", "indexdt", "censdt", "yob")]
+
   ## Assign variable name if unspecified
   if (is.null(varname_time)){
     varname_time <- "var_time"
@@ -149,7 +159,9 @@ extract_time_until <- function(cohort,
                      db = db,
                      db_filepath = db_filepath,
                      tab = tab,
-                     codelist_vector = codelist_vector)
+                     table_name = table_name,
+                     codelist_vector = codelist_vector,
+                     codelist_df = codelist_df)
 
   ### Identify the first CVD event happening after the indexdt
   ## If tab = "observation", this could be a query_type of "med" or "test", choose "med" as not interested in test results themselves
@@ -175,17 +187,14 @@ extract_time_until <- function(cohort,
   ### Calculate the time until event of interest, set to NA and remove if beyond censdt
   variable_dat <-
     dplyr::mutate(variable_dat,
-                  var_time = dplyr::case_when(obsdate <= censdt + censdt_lag ~ pmin(obsdate, censdt) - as.numeric(indexdt),
+                  var_time = dplyr::case_when(obsdate <= censdt + censdt_lag ~ as.numeric(pmin(obsdate, censdt) - indexdt),
                                               obsdate > censdt + censdt_lag ~ NA),
                   var_indicator = dplyr::case_when(!is.na(var_time) ~ 1,
                                                    TRUE ~ NA)) |>
     dplyr::filter(!is.na(var_time))
 
-  ### Reduce to variables of interst
-  variable_dat <- variable_dat[,c("patid", "var_time", "var_indicator")]
-
   ### Merge back with cohort
-  variable_dat <- merge(dplyr::select(cohort, patid, indexdt, censdt), variable_dat, by.x = "patid", by.y = "patid", all.x = TRUE)
+  variable_dat <- merge(dplyr::select(cohort, patid, indexdt, censdt), dplyr::select(variable_dat, -indexdt, -censdt), by.x = "patid", by.y = "patid", all.x = TRUE)
 
   ### If the event has NA, set the time to censdt, and indicator to 0
   variable_dat <- dplyr::mutate(variable_dat,
@@ -195,8 +204,16 @@ extract_time_until <- function(cohort,
                                                             is.na(var_time) ~ as.numeric(censdt - indexdt))
   )
 
-  ### Reduce to variables of interest
-  variable_dat <- variable_dat[,c("patid", "var_time", "var_indicator")]
+  ### Create vector of variables to reduce to
+  keep_vars <- c("patid", "var_time", "var_indicator")
+  if (!is.null(codelist_df)){
+    keep_vars <- append(keep_vars, colnames(codelist_df))
+  }
+  ### Remove duplicates
+  keep_vars <- keep_vars[!duplicated(keep_vars)]
+
+  ### Reduce variable_dat to these vars
+  variable_dat <- variable_dat[,keep_vars]
 
   ### Change name of variable to varname
   colnames(variable_dat)[colnames(variable_dat) == "var_time"] <- varname_time

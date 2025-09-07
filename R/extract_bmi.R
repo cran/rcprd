@@ -11,6 +11,9 @@
 #' @param codelist_bmi_vector Vector of codes for BMI to query the database with.
 #' @param codelist_weight_vector Vector of codes for weight to query the database with.
 #' @param codelist_height_vector Vector of codes for height to query the database with.
+#' @param codelist_bmi_df data.frame of codes for BMI to query the database with.
+#' @param codelist_weight_df data.frame of codes for weight to query the database with.
+#' @param codelist_height_df data.frame of codes for height to query the database with.
 #' @param indexdt Name of variable which defines index date in `cohort`.
 #' @param t Number of days after index date at which to calculate variable.
 #' @param t_varname Whether to add `t` to `varname`.
@@ -21,6 +24,7 @@
 #' @param db_open An open SQLite database connection created using RSQLite::dbConnect, to be queried.
 #' @param db Name of SQLITE database on hard disk (stored in "data/sql/"), to be queried.
 #' @param db_filepath Full filepath to SQLITE database on hard disk, to be queried.
+#' @param table_name Specify name of table in the SQLite database to be queried, if this is different from 'observation'.
 #' @param out_save_disk If `TRUE` will attempt to save outputted data frame to directory "data/extraction/".
 #' @param out_subdir Sub-directory of "data/extraction/" to save outputted data frame into.
 #' @param out_filepath Full filepath and filename to save outputted data frame into.
@@ -44,6 +48,9 @@
 #' to the working directory, must be a .csv file, and contain a column "medcodeid", "prodcodeid" or "ICD10" depending on the chosen `tab`. The input
 #' to these variables should just be the name of the files (excluding the suffix .csv). The codelists can also be read in manually, and supplied as a
 #' character vector. This option will take precedence over the codelists stored on the hard disk if both are specified.
+#'
+#' The argument `table_name` is only necessary if the name of the table being queried does not match 'observation'. This will occur when
+#' `str_match` is used in `cprd_extract` or `add_to_database` to create the .sqlite database.
 #'
 #' @returns A data frame with variable BMI.
 #'
@@ -84,6 +91,9 @@ extract_bmi <- function(cohort,
                         codelist_bmi_vector = NULL,
                         codelist_weight_vector = NULL,
                         codelist_height_vector = NULL,
+                        codelist_bmi_df = NULL,
+                        codelist_weight_df = NULL,
+                        codelist_height_df = NULL,
                         indexdt,
                         t = NULL,
                         t_varname = TRUE,
@@ -94,6 +104,7 @@ extract_bmi <- function(cohort,
                         db_open = NULL,
                         db = NULL,
                         db_filepath = NULL,
+                        table_name = NULL,
                         out_save_disk = FALSE,
                         out_subdir = NULL,
                         out_filepath = NULL,
@@ -149,7 +160,9 @@ extract_bmi <- function(cohort,
                          db = db,
                          db_filepath = db_filepath,
                          tab = "observation",
-                         codelist_vector = codelist_bmi_vector)
+                         table_name = table_name,
+                         codelist_vector = codelist_bmi_vector,
+                         codelist_df = codelist_bmi_df)
 
   variable_dat.bmi <- combine_query(db_query = db.qry.bmi,
                                     cohort = cohort,
@@ -165,7 +178,9 @@ extract_bmi <- function(cohort,
                             db = db,
                             db_filepath = db_filepath,
                             tab = "observation",
-                            codelist_vector = codelist_height_vector)
+                            table_name = table_name,
+                            codelist_vector = codelist_height_vector,
+                            codelist_df = codelist_height_df)
 
   variable_dat.height <- combine_query(db_query = db.qry.height,
                                        cohort = cohort,
@@ -179,7 +194,9 @@ extract_bmi <- function(cohort,
                             db = db,
                             db_filepath = db_filepath,
                             tab = "observation",
-                            codelist_vector = codelist_weight_vector)
+                            table_name = table_name,
+                            codelist_vector = codelist_weight_vector,
+                            codelist_df = codelist_weight_df)
 
   variable_dat.weight <- combine_query(db_query = db.qry.weight,
                                        cohort = cohort,

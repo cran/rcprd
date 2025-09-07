@@ -11,13 +11,14 @@
 #' @param use_set Reduce subset_patids to just those with a corresponding set value to the .txt file being read in. Can greatly improve computational efficiency when subset_patids is large. See vignette XXXX for more details.
 #' @param db  An open SQLite database connection created using RSQLite::dbConnect.
 #' @param extract_txt_func User-defined function to read the .txt file into R.
-#' @param tablename Name of table in SQLite database that the data will be added to.
+#' @param table_name Name of table in SQLite database that the data will be added to.
+#' @param rm_duplicates TRUE/FALSE whether to remove duplicate values (default is FALSE).
 #' @param ... Extract arguments passed to read.table (or extract_txt_func) when reading in .txt files.
 #'
 #' @returns Adds .txt file to SQLite database on hard disk.
 #'
 #' @details
-#' Will add the file to a table named `filetype` in the SQLite database, unless `tablename` is specified.
+#' Will add the file to a table named `filetype` in the SQLite database, unless `table_name` is specified.
 #'
 #' If `use_set = FALSE`, then `subset_patids` should be a vector of patid's that the .txt files will be subsetted on before adding to the SQLite database.
 #' If `use_set = TRUE`, then `subset_patids` should be a dataframe with two columns, `patid` and `set`, where `set` corresponds to the number in the file name
@@ -61,7 +62,8 @@ add_to_database <- function(filepath,
                             use_set = FALSE,
                             db,
                             extract_txt_func = NULL,
-                            tablename = NULL,
+                            table_name = NULL,
+                            rm_duplicates = FALSE,
                             ...){
 
   ### Check filetype
@@ -97,19 +99,23 @@ add_to_database <- function(filepath,
       ### Apply subsetting
       subset_patids <- subset_patids[!is.na(fastmatch::fmatch(subset_patids$set, set.filepath)), ]
       subset_patids <- subset_patids$patid
-      #subset_patids <- subset_patids[set == set.filepath, patid]
     }
+
     ### Subset the data to those observations with patid in subset_patids
     ext.dat <- ext.dat[!is.na(fastmatch::fmatch(ext.dat$patid, subset_patids)), ]
-    #ext.dat <- ext.dat[patid %in% subset_patids]
-    #ext.dat <- subset(ext.dat, patid %in% subset_patids)
+
+  }
+
+  ### Remove duplicates
+  if (rm_duplicates == TRUE){
+    ext.dat <- dplyr::distinct(ext.dat)
   }
 
   ### Add to sqlite database
-  if (is.null(tablename)){
+  if (is.null(table_name)){
     RSQLite::dbWriteTable(db, filetype, ext.dat, ...)
   } else {
-    RSQLite::dbWriteTable(db, tablename, ext.dat, ...)
+    RSQLite::dbWriteTable(db, table_name, ext.dat, ...)
   }
 
 }
@@ -129,7 +135,8 @@ add_to_database <- function(filepath,
 #' @param use_set Reduce subset_patids to just those with a corresponding set value to the .txt file being read in. Can greatly improve computational efficiency when subset_patids is large. See vignette XXXX for more details.
 #' @param extract_txt_func User-defined function to read the .txt file into R.
 #' @param str_match Character vector to match on when searching for file names to add to the database.
-#' @param tablename Name of table in SQLite database that the data will be added to.
+#' @param table_name Name of table in SQLite database that the data will be added to.
+#' @param rm_duplicates TRUE/FALSE whether to remove duplicate values (default is FALSE).
 #'
 #' @returns Adds .txt file to SQLite database on hard disk.
 #'
@@ -137,7 +144,7 @@ add_to_database <- function(filepath,
 #' By default, will add files that contain `filetype` in the file name to a table named `filetype` in the SQLite database.
 #' If `str_match` is specified, will add files that contain `str_match` in the file name to a table named `str_match` in the SQLite database.
 #' In this case, `filetype` will still be used to choose which function reads in and formats the raw data, although this can be overwritten with
-#' `extract_txt_func`. If argument `tablename` is specified, data will be added to a table called `tablename` in the SQLite database.
+#' `extract_txt_func`. If argument `table_name` is specified, data will be added to a table called `table_name` in the SQLite database.
 #'
 #' Currently, rcprd only deals with `filetype = c("observation", "drugissue", "referral", "problem", "consultation", "hes_primary", "death")` by default.
 #' However, by using `str_match` and `extract_txt_func`, the user can manually search for files with any string in the file name, and read them in
@@ -186,7 +193,8 @@ cprd_extract <- function(db,
                          use_set = FALSE,
                          extract_txt_func = NULL,
                          str_match = NULL,
-                         tablename = NULL){
+                         table_name = NULL,
+                         rm_duplicates = FALSE){
 
   ### Check filetype
   filetype <- match.arg(filetype)
@@ -210,10 +218,13 @@ cprd_extract <- function(db,
     filenames <- filenames[stringr::str_detect(filenames, filetype)]
   } else {
     filenames <- filenames[stringr::str_detect(filenames, str_match)]
-    if (is.null(tablename)){
-      tablename <- str_match
+    if (is.null(table_name)){
+      table_name <- str_match
     }
   }
+
+  ### Check for duplicates
+  # ADD HERE XXXX
 
   ### Initialise progress bar
   pb <- utils::txtProgressBar(min = 0,
@@ -235,7 +246,8 @@ cprd_extract <- function(db,
                     use_set = use_set,
                     db = db,
                     extract_txt_func = extract_txt_func,
-                    tablename = tablename,
+                    table_name = table_name,
+                    rm_duplicates = rm_duplicates,
                     overwrite = TRUE)
     ### Print progress bar
     utils::setTxtProgressBar(pb, progress)
@@ -252,7 +264,8 @@ cprd_extract <- function(db,
                         use_set = use_set,
                         db = db,
                         extract_txt_func = extract_txt_func,
-                        tablename = tablename,
+                        table_name = table_name,
+                        rm_duplicates = rm_duplicates,
                         append = TRUE)
         ## Add progress to progress bar
         progress <- progress + 1
@@ -275,8 +288,12 @@ cprd_extract <- function(db,
 #' @param db Name of SQLITE database on hard disk, to be queried.
 #' @param db_filepath Full filepath to SQLITE database on hard disk, to be queried.
 #' @param db_cprd CPRD Aurum ('aurum') or gold ('gold').
-#' @param tab Name of table in SQLite database that is to be queried.
-#' @param codelist_vector Vector of codes to query the database with. This takes precedent over `codelist` if both are specified.
+#' @param tab CPRD filetype
+#' @param table_name Specify name of table in the SQLite database to be queried, if this is different from `tab`.
+#' @param codelist_vector Vector of codes to query the database with.
+#' @param codelist_df data.frame used to specify the codelist.
+#' @param n number of observations to output
+#' @param rm_duplicates TRUE/FALSE whether to remove duplicate values (default is FALSE)
 #'
 #' @details
 #' Specifying `db` requires a specific underlying directory structure. The SQLite database must be stored in "data/sql/" relative to the working directory.
@@ -286,7 +303,12 @@ cprd_extract <- function(db,
 #'
 #' Specifying `codelist` requires a specific underlying directory structure. The codelist on the hard disk must be stored in "codelists/analysis/" relative
 #' to the working directory, must be a .csv file, and contain a column "medcodeid", "prodcodeid" or "ICD10" depending on the chosen `tab`. The codelist can
-#' also be read in manually, and supplied as a character vector to `codelist_vector`. If `codelist_vector` is defined, this will take precedence over `codelist`.
+#' also be read in manually, and supplied as a character vector to `codelist_vector`. If the codelist is specified through an R data.frame, `codelist_df`,
+#' this must contain a column "medcodeid", "prodcodeid" or "ICD10" depending on the chosen `tab`. Specifying the codelist this way will retain all the other
+#' columns from `codelist_df` in the queried output.
+#'
+#' The argument `table_name` is only necessary if the name of the table being queried does not match the CPRD filetype specified in `tab`. This will occur when
+#' `str_match` is used in `cprd_extract` or `add_to_database` to create the .sqlite database.
 #'
 #' @returns A data.table with observations contained in the specified codelist.
 #'
@@ -309,38 +331,104 @@ cprd_extract <- function(db,
 #' unlink(file.path(tempdir(), "temp.sqlite"))
 #'
 #' @export
-db_query <- function(codelist,
+db_query <- function(codelist = NULL,
                      db_open = NULL,
                      db = NULL,
                      db_filepath = NULL,
                      db_cprd = c("aurum", "gold"),
                      tab = c("observation", "drugissue", "clinical", "immunisation", "test", "therapy", "hes_primary", "death"),
-                     codelist_vector = NULL){
+                     table_name = NULL,
+                     codelist_vector = NULL,
+                     codelist_df = NULL,
+                     n = NULL,
+                     rm_duplicates = FALSE){
+
+  # codelist = NULL
+  # db_open = aurum_extract
+  # db = NULL
+  # db_filepath = NULL
+  # db_cprd = "aurum"
+  # tab = "observation"
+  # table_name = NULL
+  # codelist_vector = NULL
+
+  ### Error
+  if (as.numeric(!is.null(codelist)) + as.numeric(!is.null(codelist_vector)) + as.numeric(!is.null(codelist_df)) > 1){
+    stop("Cannot specify more than one codelist")
+  }
 
   ### Match args
   db_cprd <- match.arg(db_cprd)
 
-  ### Extract codelist
-  if (is.null(codelist_vector)){
-    codelist <- data.table::fread(file = paste(getwd(),"/codelists/analysis/", codelist, ".csv", sep = ""),
-                                  sep = ",", header = TRUE, colClasses = "character")
-    if (tab %in% c("hes_primary", "death")){
-      codelist <- codelist$ICD10
+  ### Set table_name
+  if (is.null(table_name)){table_name <- tab}
+
+  ### If no codelist specified, write a simple query
+  if (is.null(codelist_vector) & is.null(codelist) & is.null(codelist_df)){
+    qry <- paste("SELECT * FROM", table_name)
+
+  } else {
+
+    ###
+    ### Else, define query based off codelist
+    ###
+
+    ### Extract codelist
+    if (is.null(codelist_vector)){
+      if (!is.null(codelist)){
+        codelist <- data.table::fread(file = paste(getwd(),"/codelists/analysis/", codelist, ".csv", sep = ""),
+                                      sep = ",", header = TRUE, colClasses = "character")
+      } else if (!is.null(codelist_df)){
+        codelist <- codelist_df
+      }
+      if (tab %in% c("hes_primary", "death")){
+        codelist <- codelist$ICD10
+      } else if (db_cprd == "aurum"){
+        if (tab == "observation"){
+          codelist <- codelist$medcodeid
+        } else if (tab == "drugissue"){
+          codelist <- codelist$prodcodeid
+        }
+      } else if (db_cprd == "gold"){
+        if (tab %in% c("clinical", "immunisation", "test")){
+          codelist <- codelist$medcode
+        } else if (tab == "therapy"){
+          codelist <- codelist$prodcode
+        }
+      }
+    } else {
+      codelist <- codelist_vector
+    }
+
+    ###
+    ### Create the query
+    ###
+
+    ### If the table has been created using str_match, then we need to search the table called table_name
+    ### However, if created as normal, then the table_name will be equal to tab
+    if (tab == "hes_primary"){
+      where_clause <- paste0("`ICD_PRIMARY` IN (", paste("'", codelist, "'", sep = "", collapse = ","), ")")
+      qry <- paste("SELECT * FROM", table_name, "WHERE", where_clause)
+    } else if (tab == "death"){
+      where_clause <- paste0("`cause` IN (", paste("'", codelist, "'", sep = "", collapse = ","), ")")
+      qry <- paste("SELECT * FROM", table_name, "WHERE", where_clause)
     } else if (db_cprd == "aurum"){
       if (tab == "observation"){
-        codelist <- codelist$medcodeid
+        where_clause <- paste0("`medcodeid` IN (", paste("'", codelist, "'", sep = "", collapse = ","), ")")
+        qry <- paste("SELECT * FROM", table_name, "WHERE", where_clause)
       } else if (tab == "drugissue"){
-        codelist <- codelist$prodcodeid
+        where_clause <- paste0("`prodcodeid` IN (", paste("'", codelist, "'", sep = "", collapse = ","), ")")
+        qry <- paste("SELECT * FROM", table_name, "WHERE", where_clause)
       }
     } else if (db_cprd == "gold"){
       if (tab %in% c("clinical", "immunisation", "test")){
-        codelist <- codelist$medcode
+        where_clause <- paste0("`medcode` IN (", paste("'", codelist, "'", sep = "", collapse = ","), ")")
+        qry <- paste("SELECT * FROM", table_name, "WHERE", where_clause)
       } else if (tab == "therapy"){
-        codelist <- codelist$prodcode
+        where_clause <- paste0("`prodcode` IN (", paste("'", codelist, "'", sep = "", collapse = ","), ")")
+        qry <- paste("SELECT * FROM", table_name, "WHERE", where_clause)
       }
     }
-  } else {
-    codelist <- codelist_vector
   }
 
   ### Connect to SQLite database
@@ -354,38 +442,38 @@ db_query <- function(codelist,
     mydb <- db_open
   }
 
-  ### Create the query
-  if (tab == "hes_primary"){
-    where_clause <- paste0("`ICD_PRIMARY` IN (", paste("'", codelist, "'", sep = "", collapse = ","), ")")
-    qry <- paste("SELECT * FROM", tab, "WHERE", where_clause)
-  } else if (tab == "death"){
-    where_clause <- paste0("`cause` IN (", paste("'", codelist, "'", sep = "", collapse = ","), ")")
-    qry <- paste("SELECT * FROM", tab, "WHERE", where_clause)
-  } else if (db_cprd == "aurum"){
-    if (tab == "observation"){
-      where_clause <- paste0("`medcodeid` IN (", paste("'", codelist, "'", sep = "", collapse = ","), ")")
-      qry <- paste("SELECT * FROM", tab, "WHERE", where_clause)
-    } else if (tab == "drugissue"){
-      where_clause <- paste0("`prodcodeid` IN (", paste("'", codelist, "'", sep = "", collapse = ","), ")")
-      qry <- paste("SELECT * FROM", tab, "WHERE", where_clause)
-    }
-  } else if (db_cprd == "gold"){
-    if (tab %in% c("clinical", "immunisation", "test")){
-      where_clause <- paste0("`medcode` IN (", paste("'", codelist, "'", sep = "", collapse = ","), ")")
-      qry <- paste("SELECT * FROM", tab, "WHERE", where_clause)
-    } else if (tab == "therapy"){
-      where_clause <- paste0("`prodcode` IN (", paste("'", codelist, "'", sep = "", collapse = ","), ")")
-      qry <- paste("SELECT * FROM", tab, "WHERE", where_clause)
-    }
-  }
-
   ### Run the query and turn into data.table
-  db_query <- RSQLite::dbGetQuery(mydb, qry)
+  if (is.null(n)){
+    db_query <- RSQLite::dbGetQuery(mydb, qry)
+  } else {
+    db_query <- RSQLite::dbGetQuery(mydb, qry, n = n)
+  }
   db_query <- data.table::as.data.table(db_query)
 
   ### Disconnect
   if (is.null(db_open)){
     RSQLite::dbDisconnect(mydb)
+  }
+
+  ### Remove duplicates
+  if (rm_duplicates == TRUE){
+    db_query <- dplyr::distinct(db_query)
+  }
+
+  ### If codelist_df specified, merge with this to retain variables
+  if (!is.null(codelist_df)){
+    db_query <- dplyr::left_join(db_query, codelist_df, by = dplyr::join_by(medcodeid))
+  }
+
+  ### Format dates
+  if ("obsdate" %in% colnames(db_query)){
+    db_query$obsdate <- as.Date(db_query$obsdate)
+  }
+  if ("enterdate" %in% colnames(db_query)){
+    db_query$enterdate <- as.Date(db_query$enterdate)
+  }
+  if ("issuedate" %in% colnames(db_query)){
+    db_query$issuedate <- as.Date(db_query$issuedate)
   }
 
   ### Assign class
@@ -487,17 +575,19 @@ combine_query_boolean.aurum <- function(db_query,
   cohort_qry <- merge(cohort, db_query, by.x = "patid", by.y = "patid")
   cohort_qry <- data.table::as.data.table(cohort_qry)
 
-  ### Reduce to variables of interest
-  if (query_type == "med"){
-    cohort_qry <- cohort_qry[,c("patid", "indexdt", "obsdate")]
-  } else if (query_type == "drug"){
-    cohort_qry <- cohort_qry[,c("patid", "indexdt", "issuedate")]
-    ## rename issuedate to obsdate so we can use same code for medical or drug queries
+  ### rename issuedate to obsdate so we can use same code for medical or drug queries
+  if (query_type == "drug"){
     colnames(cohort_qry)[colnames(cohort_qry) == "issuedate"] <- "obsdate"
   }
 
+  ### Remove values before 1900 or before person was born
+  cohort_qry <- cohort_qry[lubridate::year(obsdate) >= yob & obsdate > as.Date("01/01/1900", format = "%d/%m/%Y")]
+
   ### Remove values outside of specified time range
   cohort_qry <- cohort_qry[obsdate <= indexdt + time_post & obsdate > indexdt - time_prev]
+
+  ### Reduce to variables of interest
+  cohort_qry <- cohort_qry[,c("patid", "indexdt", "obsdate")]
 
   ### Identify which patients have had the required number of events in the specified time period
   cohort_qry <- cohort_qry |>
@@ -653,7 +743,7 @@ combine_query.aurum <- function(db_query,
                                 numobs = 1,
                                 value_na_rm = TRUE,
                                 earliest_values = FALSE,
-                                reduce_output = TRUE){
+                                reduce_output = FALSE){
 
   ### Merge cohort with the database query keeping observations that are in both
   cohort_qry <- merge(cohort, db_query, by.x = "patid", by.y = "patid")
@@ -668,6 +758,9 @@ combine_query.aurum <- function(db_query,
     ## rename issuedate to obsdate so we can use same naming for all queries
     colnames(cohort_qry)[colnames(cohort_qry) == "issuedate"] <- "obsdate"
   }
+
+  ### Remove values before 1900 or before person was born
+  cohort_qry <- cohort_qry[lubridate::year(obsdate) >= yob & obsdate > as.Date("01/01/1900", format = "%d/%m/%Y")]
 
   ### Remove values outside of specified time range
   cohort_qry <- cohort_qry[obsdate <= indexdt + time_post & obsdate > indexdt - time_prev]
@@ -730,7 +823,7 @@ prep_cohort <- function(cohort, indexdt, t, reduce = TRUE){
 
   ### Reduce cohort to variables of interest
   if (reduce == TRUE){
-    cohort <- cohort[,c("patid", "indexdt")]
+    cohort <- cohort[,c("patid", "indexdt", "yob")]
   }
 
   ### If t has been specified, round it to nearest integer, add to indexdt to extract data at appropriate time
@@ -818,7 +911,7 @@ implement_output <- function(variable_dat, varname, out_save_disk, out_subdir, o
 #' @description
 #' Create cohort from patient files
 #'
-#' @param filepath Path to directory containing .txt files.
+#' @param filepath Path to directory containing patient .txt files.
 #' @param patids Patids of patients to retain in the cohort. Character vector. Numeric values should not be used.
 #' @param select Character vector of column names to select.
 #' @param set If `TRUE` will create a variable called `set` which will contain the number that comes after the word 'set' in the file name.
@@ -885,3 +978,55 @@ extract_cohort <- function(filepath,
   return(pat)
 
 }
+
+#' Combine practice files
+#'
+#' @description
+#' Combine practice files
+#'
+#' @param filepath Path to directory containing practice .txt files.
+#' @param select Character vector of column names to select.
+#'
+#' @returns Data frame with patient information
+#'
+#' @examples
+#'
+#' ## Extract cohort data
+#' prac<-extract_practices(filepath = system.file("aurum_data", package = "rcprd"))
+#' prac
+#'
+#' @export
+extract_practices <- function(filepath,
+                              select = NULL){
+
+  ### Get filenames of patient files
+  filenames <- list.files(filepath, pattern = ".txt", full.names = TRUE)
+
+  ### Reduce to those with "practice" in the filename
+  filenames <- filenames[stringr::str_detect(filenames, "practice")]
+
+  ### Read in all patient files and concatenate
+  if (length(filenames) >= 1){
+    prac <-  extract_txt_prac(filenames[1])
+    if (length(filenames) > 1){
+      ## Append for all subsequent files
+      for (filename in filenames[-1]){
+        prac.temp <-  extract_txt_prac(filename)
+        prac <- rbind(prac, prac.temp)
+      }
+    }
+  } else if (length(filenames) == 0){
+    stop("No files to import")
+  }
+
+  ### Select variables
+  if(!is.null(select)){
+    ## Apply selection
+    prac <- prac[,select]
+  }
+
+  ### return prac
+  return(prac)
+
+}
+

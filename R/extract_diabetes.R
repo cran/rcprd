@@ -9,12 +9,15 @@
 #' @param codelist_type2 Name of codelist (stored on hard disk in "codelists/analysis/") for type 2 diabetes to query the database with.
 #' @param codelist_type1_vector Vector of codes for type 1 diabetes to query the database with.
 #' @param codelist_type2_vector Vector of codes for type 2 diabetes to query the database with.
+#' @param codelist_type1_df data.frame of codes for type 1 diabetes to query the database with.
+#' @param codelist_type2_df data.frame of codes for type 2 diabetes to query the database with.
 #' @param indexdt Name of variable which defines index date in `cohort`.
 #' @param t Number of days after index date at which to calculate variable.
 #' @param t_varname Whether to add `t` to `varname`.
 #' @param db_open An open SQLite database connection created using RSQLite::dbConnect, to be queried.
 #' @param db Name of SQLITE database on hard disk (stored in "data/sql/"), to be queried.
 #' @param db_filepath Full filepath to SQLITE database on hard disk, to be queried.
+#' @param table_name Specify name of table in the SQLite database to be queried, if this is different from 'observation'.
 #' @param out_save_disk If `TRUE` will attempt to save outputted data frame to directory "data/extraction/".
 #' @param out_subdir Sub-directory of "data/extraction/" to save outputted data frame into.
 #' @param out_filepath Full filepath and filename to save outputted data frame into.
@@ -38,6 +41,9 @@
 #' to the working directory, must be a .csv file, and contain a column "medcodeid", "prodcodeid" or "ICD10" depending on the chosen `tab`. The input
 #' to these variables should just be the name of the files (excluding the suffix .csv). The codelists can also be read in manually, and supplied as a
 #' character vector. This option will take precedence over the codelists stored on the hard disk if both are specified.
+#'
+#' The argument `table_name` is only necessary if the name of the table being queried does not match 'observation'. This will occur when
+#' `str_match` is used in `cprd_extract` or `add_to_database` to create the .sqlite database.
 #'
 #' @returns A data frame with variable diabetes status.
 #'
@@ -73,12 +79,15 @@ extract_diabetes <- function(cohort,
                              codelist_type2 = NULL,
                              codelist_type1_vector = NULL,
                              codelist_type2_vector = NULL,
+                             codelist_type1_df = NULL,
+                             codelist_type2_df = NULL,
                              indexdt,
                              t = NULL,
                              t_varname = TRUE,
                              db_open = NULL,
                              db = NULL,
                              db_filepath = NULL,
+                             table_name = NULL,
                              out_save_disk = FALSE,
                              out_subdir = NULL,
                              out_filepath = NULL,
@@ -115,14 +124,18 @@ extract_diabetes <- function(cohort,
                            db = db,
                            db_filepath = db_filepath,
                            tab = "observation",
-                           codelist_vector = codelist_type1_vector)
+                           table_name = table_name,
+                           codelist_vector = codelist_type1_vector,
+                           codelist_df = codelist_type1_df)
 
   db.qry.type2 <- db_query(codelist_type2,
                            db_open = db_open,
                            db = db,
                            db_filepath = db_filepath,
                            tab = "observation",
-                           codelist_vector = codelist_type2_vector)
+                           table_name = table_name,
+                           codelist_vector = codelist_type2_vector,
+                           codelist_df = codelist_type2_df)
 
   ### Identify which individuals have a history of type 1 or type 2
   cohort[,"t1dia"] <- combine_query_boolean(db_query = db.qry.type1,

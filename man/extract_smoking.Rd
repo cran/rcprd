@@ -17,12 +17,18 @@ extract_smoking(
   codelist_light_vector = NULL,
   codelist_mod_vector = NULL,
   codelist_heavy_vector = NULL,
+  codelist_non_df = NULL,
+  codelist_ex_df = NULL,
+  codelist_light_df = NULL,
+  codelist_mod_df = NULL,
+  codelist_heavy_df = NULL,
   indexdt,
   t = NULL,
   t_varname = TRUE,
   db_open = NULL,
   db = NULL,
   db_filepath = NULL,
+  table_name = NULL,
   out_save_disk = FALSE,
   out_subdir = NULL,
   out_filepath = NULL,
@@ -54,6 +60,16 @@ extract_smoking(
 
 \item{codelist_heavy_vector}{Vector of codes for heavy smoker to query the database with.}
 
+\item{codelist_non_df}{data.frame of codes for non-smoker to query the database with.}
+
+\item{codelist_ex_df}{data.frame of codes for ex-smoker to query the database with.}
+
+\item{codelist_light_df}{data.frame of codes for light smoker to query the database with.}
+
+\item{codelist_mod_df}{data.frame of codes for moderate smoker to query the database with.}
+
+\item{codelist_heavy_df}{data.frame of codes for heavy smoker to query the database with.}
+
 \item{indexdt}{Name of variable which defines index date in \code{cohort}.}
 
 \item{t}{Number of days after index date at which to calculate variable.}
@@ -65,6 +81,8 @@ extract_smoking(
 \item{db}{Name of SQLITE database on hard disk (stored in "data/sql/"), to be queried.}
 
 \item{db_filepath}{Full filepath to SQLITE database on hard disk, to be queried.}
+
+\item{table_name}{Specify name of table in the SQLite database to be queried, if this is different from 'observation'.}
 
 \item{out_save_disk}{If \code{TRUE} will attempt to save outputted data frame to directory "data/extraction/".}
 
@@ -103,6 +121,9 @@ character vector. This option will take precedence over the codelists stored on 
 
 We take the most recent smoking status record. If an individuals most recent smoking status is a non-smoker,
 but they have a history of smoking prior to this, these individuals will be classed as ex-smokers.
+
+The argument \code{table_name} is only necessary if the name of the table being queried does not match 'observation'. This will occur when
+\code{str_match} is used in \code{cprd_extract} or \code{add_to_database} to create the .sqlite database.
 }
 \examples{
 

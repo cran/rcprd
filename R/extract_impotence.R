@@ -10,6 +10,8 @@
 #' @param codelist_drug Name of codelist (stored on hard disk in "codelists/analysis/") for prescriptions to query the database with.
 #' @param codelist_med_vector Vector of codes for medical diagnoses to query the database with.
 #' @param codelist_drug_vector Vector of codes for prescriptions to query the database with.
+#' @param codelist_med_df data.frame of codes for medical diagnoses to query the database with.
+#' @param codelist_drug_df data.frame of codes for prescriptions to query the database with.
 #' @param indexdt Name of variable which defines index date in `cohort`.
 #' @param t Number of days after index date at which to calculate variable.
 #' @param t_varname Whether to add `t` to `varname`.
@@ -18,6 +20,7 @@
 #' @param db_open An open SQLite database connection created using RSQLite::dbConnect, to be queried.
 #' @param db Name of SQLITE database on hard disk (stored in "data/sql/"), to be queried.
 #' @param db_filepath Full filepath to SQLITE database on hard disk, to be queried.
+#' @param table_name Specify name of table in the SQLite database to be queried, if this is different from 'observation'.
 #' @param out_save_disk If `TRUE` will attempt to save outputted data frame to directory "data/extraction/".
 #' @param out_subdir Sub-directory of "data/extraction/" to save outputted data frame into.
 #' @param out_filepath Full filepath and filename to save outputted data frame into.
@@ -38,6 +41,9 @@
 #' to these variables should just be the name of the files (excluding the suffix .csv). The codelists can also be read in manually, and supplied as a
 #' character vector. This option will take precedence over the codelists stored on the hard disk if both are specified.
 #'
+#' The argument `table_name` is only necessary if the name of the table being queried does not match 'observation'. This will occur when
+#' `str_match` is used in `cprd_extract` or `add_to_database` to create the .sqlite database.
+#'
 #' @returns A data frame with variable impotence status.
 #'
 #' @noRd
@@ -47,6 +53,8 @@ extract_impotence <- function(cohort,
                               codelist_drug = NULL,
                               codelist_med_vector = NULL,
                               codelist_drug_vector = NULL,
+                              codelist_med_df = NULL,
+                              codelist_drug_df = NULL,
                               indexdt,
                               t = NULL,
                               t_varname = TRUE,
@@ -55,6 +63,7 @@ extract_impotence <- function(cohort,
                               db_open = NULL,
                               db = NULL,
                               db_filepath = NULL,
+                              table_name = NULL,
                               out_save_disk = FALSE,
                               out_subdir = NULL,
                               out_filepath = NULL,
@@ -91,14 +100,18 @@ extract_impotence <- function(cohort,
                          db = db,
                          db_filepath = db_filepath,
                          tab = "observation",
-                         codelist_vector = codelist_med_vector)
+                         table_name = table_name,
+                         codelist_vector = codelist_med_vector,
+                         codelist_df = codelist_med_df)
 
   db.qry.drug <- db_query(codelist_drug,
                           db_open = db_open,
                           db = db,
                           db_filepath = db_filepath,
                           tab = "drugissue",
-                          codelist_vector = codelist_drug_vector)
+                          table_name = table_name,
+                          codelist_vector = codelist_drug_vector,
+                          codelist_df = codelist_drug_df)
 
   ### Identify which individuals have a history of type 1 or type 2
   cohort[,"med"] <- combine_query_boolean(db_query = db.qry.med,

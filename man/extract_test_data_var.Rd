@@ -7,8 +7,9 @@
 extract_test_data_var(
   cohort,
   varname = NULL,
-  codelist,
-  codelist_vector,
+  codelist = NULL,
+  codelist_vector = NULL,
+  codelist_df = NULL,
   indexdt,
   t = NULL,
   t_varname = TRUE,
@@ -19,6 +20,7 @@ extract_test_data_var(
   db_open = NULL,
   db = NULL,
   db_filepath = NULL,
+  table_name = NULL,
   out_save_disk = FALSE,
   out_subdir = NULL,
   out_filepath = NULL,
@@ -33,6 +35,8 @@ extract_test_data_var(
 \item{codelist}{Name of codelist (stored on hard disk) to query the database with.}
 
 \item{codelist_vector}{Vector of codes to query the database with. This takes precedent over \code{codelist} if both are specified.}
+
+\item{codelist_df}{data.frame used to specify the codelist.}
 
 \item{indexdt}{Name of variable in \code{cohort} which specifies the index date. The extracted variable will be calculated relative to this.}
 
@@ -53,6 +57,8 @@ extract_test_data_var(
 \item{db}{Name of SQLITE database on hard disk (stored in "data/sql/"), to be queried.}
 
 \item{db_filepath}{Full filepath to SQLITE database on hard disk, to be queried.}
+
+\item{table_name}{Specify name of table in the SQLite database to be queried, if this is different from 'observation'.}
 
 \item{out_save_disk}{If \code{TRUE} will attempt to save outputted data frame to directory "data/extraction/".}
 
@@ -80,6 +86,9 @@ using \code{out_filepath} to manually specify the location on the hard disk to s
 and then save onto the hard disk manually.
 
 Currently only returns most recent test result. This will be updated to return more than one most recent test result if specified.
+
+The argument \code{table_name} is only necessary if the name of the table being queried does not match 'observation'. This will occur when
+\code{str_match} is used in \code{cprd_extract} or \code{add_to_database} to create the .sqlite database.
 }
 \examples{
 

@@ -1,7 +1,7 @@
 Package: rcprd
 Title: Extraction and Management of Clinical Practice Research Datalink
         Data
-Version: 0.0.1
+Version: 0.0.2
 Authors@R: 
   c(person(given = "Alexander", family = "Pate", email = "alexander.pate@manchester.ac.uk", role = c("aut", "cre", "cph"),
          comment = c(ORCID = "0000-0002-0849-3458")))
@@ -18,15 +18,15 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 RoxygenNote: 7.3.2
 Suggests: knitr, rmarkdown, testthat (>= 3.0.0)
+Depends: R (>= 4.1.0)
 VignetteBuilder: knitr
-Depends: data.table
-Imports: dplyr, fastmatch, RSQLite, stringr
+Imports: dplyr, data.table, fastmatch, lubridate, RSQLite, stringr
 Config/testthat/edition: 3
 URL: https://alexpate30.github.io/rcprd/
 NeedsCompilation: no
-Packaged: 2024-11-11 22:30:47 UTC; mbrxsap3
-Author: Alexander Pate [aut, cre, cph]
-    (<https://orcid.org/0000-0002-0849-3458>)
+Packaged: 2025-09-07 13:17:21 UTC; mbrxsap3
+Author: Alexander Pate [aut, cre, cph] (ORCID:
+    <https://orcid.org/0000-0002-0849-3458>)
 Maintainer: Alexander Pate <alexander.pate@manchester.ac.uk>
 Repository: CRAN
-Date/Publication: 2024-11-13 14:00:02 UTC
+Date/Publication: 2025-09-07 22:00:09 UTC

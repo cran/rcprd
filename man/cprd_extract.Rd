@@ -15,7 +15,8 @@ cprd_extract(
   use_set = FALSE,
   extract_txt_func = NULL,
   str_match = NULL,
-  tablename = NULL
+  table_name = NULL,
+  rm_duplicates = FALSE
 )
 }
 \arguments{
@@ -37,7 +38,9 @@ cprd_extract(
 
 \item{str_match}{Character vector to match on when searching for file names to add to the database.}
 
-\item{tablename}{Name of table in SQLite database that the data will be added to.}
+\item{table_name}{Name of table in SQLite database that the data will be added to.}
+
+\item{rm_duplicates}{TRUE/FALSE whether to remove duplicate values (default is FALSE).}
 }
 \value{
 Adds .txt file to SQLite database on hard disk.
@@ -49,7 +52,7 @@ Add the raw data from more than one of the CPRD flatfiles to an SQLite database.
 By default, will add files that contain \code{filetype} in the file name to a table named \code{filetype} in the SQLite database.
 If \code{str_match} is specified, will add files that contain \code{str_match} in the file name to a table named \code{str_match} in the SQLite database.
 In this case, \code{filetype} will still be used to choose which function reads in and formats the raw data, although this can be overwritten with
-\code{extract_txt_func}. If argument \code{tablename} is specified, data will be added to a table called \code{tablename} in the SQLite database.
+\code{extract_txt_func}. If argument \code{table_name} is specified, data will be added to a table called \code{table_name} in the SQLite database.
 
 Currently, rcprd only deals with \code{filetype = c("observation", "drugissue", "referral", "problem", "consultation", "hes_primary", "death")} by default.
 However, by using \code{str_match} and \code{extract_txt_func}, the user can manually search for files with any string in the file name, and read them in

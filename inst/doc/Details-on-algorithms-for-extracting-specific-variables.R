@@ -31,7 +31,7 @@ lookups.weight <- read.csv("identify_numunits_weight.csv")[,-1]
 knitr::kable(lookups.weight, caption = "Unit measurements for weight")
 
 ## ----echo = FALSE-------------------------------------------------------------
-lookups.height <- read.csv("identify_numunits_sbp.csv")[,-1]
+lookups.height <- read.csv("identify_numunits_height.csv")[,-1]
 knitr::kable(lookups.height, caption = "Unit measurements for height")
 
 ## ----echo = FALSE-------------------------------------------------------------
